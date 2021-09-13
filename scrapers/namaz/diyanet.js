@@ -1,95 +1,70 @@
 const BASE = `../../`
-const {HAVA_URLS} = require(`${BASE}urls.js`);
+const { DIYANET_BASE_URL, CITIES } = require(`${BASE}urls.js`);
 
 const fs = require("fs");
+const entities = require("entities");
 const { parse } = require('node-html-parser');
+const { fetchAsync } = require(`${BASE}utils.js`);
 
-const {fetchAsync} = require(`${BASE}utils.js`);
+async function start() {
+    var logs = "";
+    logs += new Date().toLocaleString('tr-TR', { day: 'numeric', month: 'long', year: "numeric", hour: "numeric", minute: "numeric", hour12: false, timeZone: 'Asia/Istanbul' })
+    var data = {}
+    var months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
- async function start(){
-    var havaData={};
-
-    for(const il in HAVA_URLS){
+    for (const il in CITIES) {
 
         var plate = il;
-        var url = HAVA_URLS[il].urls.trthaber;
-        var name = HAVA_URLS[il].name;
-        var obj={
-            "plate": plate,
-            "name": name,
-            "durum":[]
-        }
+        var diyanetId = CITIES[il].diyanetId;
+        var name = CITIES[il].name;
+        var url = DIYANET_BASE_URL + diyanetId
         //console.log("Fetching... " + name);
-
+        //entities.decodeXML("")
         var fullRawHTML = await fetchAsync(url);
 
+
         const fullDOM = parse(fullRawHTML);
-        
-        var havaHTML = fullDOM.querySelector(".hava_hafta")
-        
-        obj.durum.push(getToday(havaHTML))
-        obj.durum.push(...getOtherDays(havaHTML))
+    
+        var aylikHTMLrows = fullDOM.querySelectorAll("#vakit-bottom-wrapper #tab-1 tbody tr")
+        for (const gun of aylikHTMLrows) {
+            var gunHTMLrows = gun.querySelectorAll("td");
+            var gunTextParts = entities.decodeXML(gunHTMLrows[0].innerText).split(" ");
+            var gunText = `${gunTextParts[2]}-${months.indexOf(gunTextParts[1]) + 1}-${gunTextParts[0]}`
+            console.log(plate, gunText)
 
-        havaData[plate] = obj;
+            var gunData =
+            {
+                "imsak": gunHTMLrows[1].innerText,
+                "gunes": gunHTMLrows[2].innerText,
+                "ogle": gunHTMLrows[3].innerText,
+                "ikindi": gunHTMLrows[4].innerText,
+                "aksam": gunHTMLrows[5].innerText,
+                "yatsi": gunHTMLrows[6].innerText
+            }
+
+            if (typeof data[gunText] == "object") {
+                data[gunText][plate] = gunData;
+            }
+
+            else {
+                data[gunText] = {};
+                data[gunText][plate] = gunData;
+            }
+        }
     }
-    havaData.lastUpdated = new Date().toLocaleString('tr-TR', { day:'numeric', month:'long', year:"numeric",hour:"numeric",minute:"numeric",hour12: false ,timeZone: 'Asia/Istanbul' })
+    writeFile(logs, "hava_trt", `data/hava/`);
 
-    //TODO : Send POST KOD8 API 
-    writeFile(havaData,"hava_trt",`data/hava/`,"json");
+    for (const gun in data) {
+        writeFile(data[gun], gun, `data/namaz/`, "json");
+    }
 }
 
-function getToday(html){
-    var todayContainer = html.querySelector("#hafta_0.haftaDetay")
-    var date = html.querySelector(".tabs.haftaGunler a[href=#hafta_0] span.baslik").innerText;
-    var now = todayContainer.querySelector(".sehir .baslik b").innerText.split("°")[0];
-    var condition=todayContainer.querySelector(".sehir .durum").innerText;
-    
-    var detailsDOMItems = todayContainer.querySelectorAll(".detay2 ul li");
-    var max=detailsDOMItems[0].querySelector(".deger").innerText.split("°")[0];
-    var min=detailsDOMItems[1].querySelector(".deger").innerText.split("°")[0];
-    var humidity=detailsDOMItems[2].querySelector(".deger").innerText
-    var wind=detailsDOMItems[3].querySelector(".deger").innerText
-
-    
-    return {date, now, condition, min, max, humidity, wind  };
-}
-
-function getOtherDays(html){
-    var otherDays = ["hafta_1","hafta_2"]
-    var data = [];
-
-    otherDays.forEach(id=>{
-
-        var dayContainer = html.querySelector(`#${id}.haftaDetay`)
-        var date = html.querySelector(`.tabs.haftaGunler a[href=#${id}] span.baslik`).innerText;
-        var now = dayContainer.querySelector(".sehir .baslik b").innerText.split("°")[0];
-        var condition=dayContainer.querySelector(".sehir .durum").innerText;
-    
-        var detailsDOMItems = dayContainer.querySelectorAll(".detay2 ul li");
-        var max=detailsDOMItems[0].querySelector(".deger").innerText.split("°")[0];
-        var min=detailsDOMItems[1].querySelector(".deger").innerText.split("°")[0];
-        var humidity_max=detailsDOMItems[2].querySelector(".deger").innerText
-        var humidity_min=detailsDOMItems[3].querySelector(".deger").innerText
-        var wind=detailsDOMItems[4].querySelector(".deger").innerText
-       
-        data.push({date, now, condition, min, max, humidity_max,humidity_min, wind  })
-    })
-   
-    return data;
-}
-
-
-function writeFile(data,name,dir,ext){
+function writeFile(data, name, dir, ext) {
     var data = (ext == "json") ? JSON.stringify(data) : data;
-    fs.writeFile(dir+name+"."+ext, data , () => {
-		//console.log(dir+name+"."+ext," yazıldı")
+    fs.writeFile(dir + name + "." + ext, data, () => {
+        //console.log(dir+name+"."+ext," yazıldı")
     });
-
 }
 
 
-module.exports = {start}
-
-/* NOTES
-
-*/
+module.exports = { start }

@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/abdullahoguk/data-diyanet-namaz-vakitleri#readme",
   "dependencies": {
+    "entities": "^3.0.1",
     "node-fetch": "^2.6.1",
     "node-html-parser": "^3.1.3"
   }
