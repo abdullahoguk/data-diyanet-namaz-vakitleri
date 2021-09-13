@@ -29,7 +29,7 @@ async function start() {
         for (const gun of aylikHTMLrows) {
             var gunHTMLrows = gun.querySelectorAll("td");
             var gunTextParts = entities.decodeXML(gunHTMLrows[0].innerText).split(" ");
-            var gunText = `${gunTextParts[2]}-${months.indexOf(gunTextParts[1]) + 1}-${gunTextParts[0]}`
+            var gunText = `${gunTextParts[2]}-${(months.indexOf(gunTextParts[1]) + 1).toString().padStart(2, '0')}-${gunTextParts[0]}`
             console.log(plate, gunText)
 
             var gunData =
