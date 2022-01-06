@@ -20,7 +20,14 @@ async function start() {
         var url = DIYANET_BASE_URL + diyanetId + "/" + CITIES[il].slug + "-icin-namaz-vakti"
         //console.log("Fetching... " + name);
         //entities.decodeXML("")
-        var fullRawHTML = await fetchAsync(url);
+
+        try {
+            var fullRawHTML = await fetchAsync(url);
+
+        } catch (error) {
+            console.log(`HATA:il: url: ${url}   \n${error}`);
+            continue;
+        }
 
 
         const fullDOM = parse(fullRawHTML);
@@ -42,20 +49,20 @@ async function start() {
                 "yatsi": gunHTMLrows[6].innerText
             }
 
-            if (typeof data[gunText] == "object") {
-                data[gunText][plate] = gunData;
+            if (typeof data[plate] == "object") {
+                data[plate][gunText] = gunData;
             }
 
             else {
-                data[gunText] = {};
-                data[gunText][plate] = gunData;
+                data[plate] = {};
+                data[plate][gunText] = gunData;
             }
         }
     }
 
 
-    for (const gun in data) {
-        writeFile(data[gun], gun, `data/namaz/`, "json");
+    for (const plate in data) {
+        writeFile(data[plate], plate, `data/namaz/`, "json");
     }
     writeFile(logs, "logs", `data/namaz/`, "txt");
 }
