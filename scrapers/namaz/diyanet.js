@@ -41,12 +41,12 @@ async function start() {
 
             var gunData =
             {
-                "imsak": gunHTMLrows[1].innerText,
-                "gunes": gunHTMLrows[2].innerText,
-                "ogle": gunHTMLrows[3].innerText,
-                "ikindi": gunHTMLrows[4].innerText,
-                "aksam": gunHTMLrows[5].innerText,
-                "yatsi": gunHTMLrows[6].innerText
+                "imsak": gunHTMLrows[2].innerText,
+                "gunes": gunHTMLrows[3].innerText,
+                "ogle": gunHTMLrows[4].innerText,
+                "ikindi": gunHTMLrows[5].innerText,
+                "aksam": gunHTMLrows[6].innerText,
+                "yatsi": gunHTMLrows[7].innerText
             }
 
             if (typeof data[plate] == "object") {
